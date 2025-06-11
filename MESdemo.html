@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Allegion Steelcraft - Visual MES Demo</title>
+    <title>Allegion Steelcraft - Advanced Visual MES</title>
+    <!-- Using a CDN for icons - no extra files needed -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         /* --- General Styles --- */
         :root {
@@ -17,18 +19,27 @@
             --rush-color: #db4437;
             --kd-color: #4285f4;
             --fw-color: #f4b400;
+            --success-color: #28a745;
         }
 
+        /* --- UPDATED: Full-height Flexbox Layout on Body --- */
+        html {
+            height: 100%;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: var(--allegion-gray);
             color: var(--dark-gray);
             margin: 0;
             padding: 0;
-            overflow-x: auto;
+            /* NEW: Make body a flex container to control main layout */
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* Full viewport height */
+            overflow: hidden; /* Prevent the whole page from scrolling */
         }
 
-        /* --- Header --- */
+        /* --- Header (no changes) --- */
         .header {
             background-color: var(--allegion-blue);
             color: white;
@@ -40,13 +51,15 @@
             position: sticky;
             top: 0;
             z-index: 1000;
+            flex-shrink: 0; /* Prevent header from shrinking */
         }
-
         .header h1 {
             margin: 0;
             font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
-
         .add-order-btn {
             background-color: white;
             color: var(--allegion-blue);
@@ -57,32 +70,82 @@
             border-radius: var(--border-radius);
             cursor: pointer;
             transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-
         .add-order-btn:hover {
             background-color: #e0f7ff;
             transform: translateY(-2px);
         }
 
-        /* --- MES Board --- */
+        /* --- KPI Dashboard (no changes) --- */
+        .dashboard-container {
+            display: flex;
+            gap: 20px;
+            padding: 20px 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+            background-color: #fff;
+            border-bottom: 1px solid #dee2e6;
+            flex-shrink: 0; /* Prevent from shrinking */
+        }
+        .kpi-card {
+            background-color: var(--allegion-gray);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            flex: 1;
+            min-width: 160px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .kpi-card .value { font-size: 2.5em; font-weight: bold; color: var(--allegion-blue); margin: 0; }
+        .kpi-card .label { font-size: 0.9em; color: #6c757d; margin: 5px 0 0 0; text-transform: uppercase; font-weight: bold; }
+
+        /* --- Search & Filter Controls (no changes) --- */
+        .controls-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: #e9ecef;
+            flex-wrap: wrap;
+            gap: 15px;
+            flex-shrink: 0; /* Prevent from shrinking */
+        }
+        .search-wrapper { position: relative; flex-grow: 1; }
+        .search-wrapper .fa-magnifying-glass { position: absolute; top: 50%; left: 15px; transform: translateY(-50%); color: #999; }
+        .search-wrapper input, .filter-wrapper select {
+            padding: 10px 15px; border: 1px solid #ccc; border-radius: 5px;
+            font-size: 1em; height: 40px; box-sizing: border-box;
+        }
+        .search-wrapper input { padding-left: 40px; width: 100%; min-width: 250px; }
+        .filter-wrapper { display: flex; gap: 10px; }
+
+        /* --- UPDATED: MES Board Layout --- */
         #mes-board {
             display: flex;
             gap: 15px;
             padding: 20px;
-            min-height: calc(100vh - 100px);
+            align-items: stretch; /* Make columns full height */
+            /* NEW: Make the board the primary growing element */
+            flex-grow: 1;
+            overflow-x: auto; /* Allow horizontal scrolling ONLY if columns can't shrink further */
+            overflow-y: hidden; /* Prevent vertical scrolling on the board itself */
         }
-
+        
+        /* --- UPDATED: Production Stage Column Sizing --- */
         .production-stage {
             background-color: #e9ecef;
             border-radius: var(--border-radius);
-            min-width: 300px;
-            width: 300px;
             display: flex;
             flex-direction: column;
             box-shadow: var(--shadow);
             transition: background-color 0.3s;
+            /* NEW: Make columns flexible instead of fixed width */
+            flex: 1 1 0; /* Grow and shrink equally from a zero basis */
+            min-width: 280px; /* Prevent columns from becoming too narrow */
         }
-
         .production-stage h2 {
             font-size: 1.2em;
             padding: 15px;
@@ -91,186 +154,120 @@
             border-top-left-radius: var(--border-radius);
             border-top-right-radius: var(--border-radius);
             text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0; /* Prevent the header from shrinking */
         }
-
-        .cards-container {
-            padding: 10px;
-            flex-grow: 1;
-            min-height: 150px;
-            transition: background-color 0.2s ease;
-        }
-        
-        /* Drag & Drop Highlight */
-        .drag-over {
-            background-color: #cce5ff;
-        }
-
-        /* --- Order Cards --- */
-        .order-card {
-            background-color: var(--card-bg);
-            padding: 15px;
-            border-radius: var(--border-radius);
-            margin-bottom: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-            border-left: 5px solid var(--light-gray);
-            cursor: grab;
-            transition: all 0.2s;
-            position: relative;
-        }
-        
-        .order-card.is-rush {
-            border-left-color: var(--rush-color);
-        }
-
-        .order-card:hover {
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-            transform: translateY(-2px);
-        }
-        
-        .order-card.dragging {
-            opacity: 0.5;
-            transform: rotate(3deg);
-        }
-
-        .order-card h3 {
-            margin: 0 0 5px 0;
-            font-size: 1.1em;
-        }
-        .order-card p {
-            margin: 4px 0;
-            font-size: 0.9em;
-            color: #555;
-        }
-        
-        .card-tag {
-            display: inline-block;
-            padding: 3px 8px;
+        .card-count {
+            background-color: rgba(0,0,0,0.1);
             border-radius: 12px;
+            padding: 2px 10px;
             font-size: 0.8em;
             font-weight: bold;
-            color: white;
-            margin-top: 10px;
         }
-        
+        /* --- UPDATED: Cards Container (this now fills the available space) --- */
+        .cards-container {
+            padding: 10px;
+            flex-grow: 1; /* This is now effective because its parent has a defined height */
+            transition: background-color 0.2s ease;
+            overflow-y: auto; /* Allow scrolling *within* a column if it has many cards */
+        }
+        .drag-over {
+            background-color: #cce5ff !important;
+        }
+
+        /* --- Order Cards (no changes) --- */
+        .order-card {
+            background-color: var(--card-bg); padding: 15px;
+            border-radius: var(--border-radius); margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08); border-left: 5px solid var(--light-gray);
+            cursor: grab; transition: all 0.2s; position: relative;
+        }
+        .order-card.is-rush { border-left-color: var(--rush-color); }
+        .order-card:hover { box-shadow: 0 6px 12px rgba(0,0,0,0.15); transform: translateY(-2px); }
+        .order-card.dragging { opacity: 0.5; transform: rotate(3deg); }
+        .order-card h3 { margin: 0 0 5px 0; font-size: 1.1em; }
+        .order-card p { margin: 4px 0; font-size: 0.9em; color: #555; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+        .card-tag { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; color: white; }
         .tag-kd { background-color: var(--kd-color); }
         .tag-fw { background-color: var(--fw-color); }
-
-        .card-actions {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .order-card:hover .card-actions {
-            opacity: 1;
-        }
-
-        .card-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1.2em;
-            padding: 5px;
-            color: #777;
-        }
+        .due-date { font-size: 0.85em; color: #555; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        .due-date.overdue { color: var(--rush-color); }
+        .card-actions { position: absolute; top: 10px; right: 10px; opacity: 0; transition: opacity 0.2s; }
+        .order-card:hover .card-actions { opacity: 1; }
+        .card-actions button { background: none; border: none; cursor: pointer; font-size: 1.2em; padding: 5px; color: #777; }
         .card-actions button:hover { color: #000; }
 
-        /* --- Modal for Add/Edit Order --- */
+        /* --- Modal & Toast (no changes) --- */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.6);
-            z-index: 2000;
-            display: none;
+            z-index: 2000; display: none;
         }
-
         .modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
-            padding: 30px;
+            background: white; padding: 30px;
             border-radius: var(--border-radius);
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 2001;
-            width: 90%;
-            max-width: 500px;
-            display: none;
+            z-index: 2001; width: 90%;
+            max-width: 500px; display: none;
         }
-
-        .modal h2 {
-            margin-top: 0;
-            color: var(--allegion-blue);
+        .modal h2 { margin-top: 0; color: var(--allegion-blue); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input[type="text"], .form-group input[type="date"], .form-group textarea {
+            width: 100%; padding: 10px; border: 1px solid var(--light-gray);
+            border-radius: 5px; box-sizing: border-box;
         }
-
-        .form-group {
-            margin-bottom: 20px;
+        .form-group .radio-group, .form-group .checkbox-group { display: flex; align-items: center; gap: 10px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-actions button { padding: 10px 20px; border-radius: 5px; border: none; font-size: 1em; font-weight: bold; cursor: pointer; }
+        .btn-save { background-color: var(--allegion-blue); color: white; }
+        .btn-cancel { background-color: #ccc; color: #333; }
+        #toast {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            background-color: var(--allegion-blue); color: white;
+            padding: 15px 25px; border-radius: 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 3000; opacity: 0; visibility: hidden;
+            transition: all 0.4s ease-in-out;
         }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .form-group input[type="text"], .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--light-gray);
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-
-        .form-group .radio-group { display: flex; gap: 20px; }
-        .form-group .checkbox-group { display: flex; align-items: center; gap: 10px; }
-
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .modal-actions button {
-            padding: 10px 20px;
-            border-radius: 5px;
-            border: none;
-            font-size: 1em;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .btn-save {
-            background-color: var(--allegion-blue);
-            color: white;
-        }
-
-        .btn-cancel {
-            background-color: #ccc;
-            color: #333;
-        }
-
+        #toast.show { bottom: 30px; opacity: 1; visibility: visible; }
     </style>
 </head>
 <body>
-
+    <!-- The rest of the HTML and the <script> tag are exactly the same as before -->
     <header class="header">
-        <h1>Allegion Steelcraft - Visual MES</h1>
-        <button class="add-order-btn" id="addOrderBtn">＋ Add New Order</button>
+        <h1><i class="fa-solid fa-industry"></i>Allegion Steelcraft - Visual MES</h1>
+        <button class="add-order-btn" id="addOrderBtn"><i class="fa-solid fa-plus"></i> Add New Order</button>
     </header>
 
-    <main id="mes-board">
-        <!-- Production stage columns will be dynamically generated by JS -->
-    </main>
+    <div class="dashboard-container" id="kpi-dashboard"></div>
+    
+    <div class="controls-container">
+        <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Search by Order # or Customer...">
+        </div>
+        <div class="filter-wrapper">
+            <select id="filterType">
+                <option value="all">All Types</option>
+                <option value="KD">K/D</option>
+                <option value="FW">FW</option>
+            </select>
+            <select id="filterRush">
+                <option value="all">All Priorities</option>
+                <option value="rush">Rush Only</option>
+            </select>
+        </div>
+    </div>
 
-    <!-- Modal for Adding/Editing Orders -->
+    <main id="mes-board"></main>
+
     <div class="modal-overlay" id="modalOverlay"></div>
     <div class="modal" id="orderModal">
         <h2 id="modalTitle">Add New Order</h2>
@@ -283,6 +280,10 @@
             <div class="form-group">
                 <label for="customerName">Customer Name</label>
                 <input type="text" id="customerName" required>
+            </div>
+            <div class="form-group">
+                <label for="dueDate">Due Date</label>
+                <input type="date" id="dueDate">
             </div>
             <div class="form-group">
                 <label>Frame Type</label>
@@ -308,212 +309,300 @@
         </form>
     </div>
 
+    <div id="toast"></div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const STAGES = [
-                { id: 'stage-orders', title: 'Orders Received' },
-                { id: 'stage-shearing', title: 'Shearing' },
-                { id: 'stage-punching', title: 'Punching (Vipros/Pega)' },
-                { id: 'stage-forming', title: 'Press Brake (Forming)' },
-                { id: 'stage-spotweld', title: 'Spot Welding' },
-                { id: 'stage-paint', title: 'Painting' },
-                { id: 'stage-final-assembly', title: 'Final Assembly (Weld/Pack)' },
-                { id: 'stage-shipping', title: 'Ready to Ship' },
-            ];
-            
-            // The "single source of truth" for all orders
-            let orders = [
-                { id: 1698350001, orderNumber: 'SO-78901', customer: 'Turner Construction', type: 'KD', details: '3x Jambs, 1x Head', stage: 'stage-punching', isRush: false },
-                { id: 1698350002, orderNumber: 'SO-78902', customer: 'PCL Constructors', type: 'FW', details: 'Standard frame set', stage: 'stage-shearing', isRush: true },
-                { id: 1698350003, orderNumber: 'SO-78903', customer: 'Clark Builders', type: 'KD', details: 'Hinge Jamb only', stage: 'stage-forming', isRush: false },
-                { id: 1698350004, orderNumber: 'SO-78904', customer: 'Local Supply Co.', type: 'KD', details: '10x KD stock frames', stage: 'stage-orders', isRush: false },
-            ];
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- State and Constants ---
+        const STAGES = [
+            { id: 'stage-orders', title: 'Orders Received' },
+            { id: 'stage-shearing', title: 'Shearing' },
+            { id: 'stage-punching', title: 'Punching (Vipros/Pega)' },
+            { id: 'stage-forming', title: 'Press Brake (Forming)' },
+            { id: 'stage-spotweld', title: 'Spot Welding' },
+            { id: 'stage-paint', title: 'Painting' },
+            { id: 'stage-final-assembly', title: 'Final Assembly (Weld/Pack)' },
+            { id: 'stage-shipping', title: 'Ready to Ship' },
+        ];
+        
+        let orders = []; // The "single source of truth"
 
-            // DOM Elements
-            const board = document.getElementById('mes-board');
-            const addOrderBtn = document.getElementById('addOrderBtn');
-            const modalOverlay = document.getElementById('modalOverlay');
-            const orderModal = document.getElementById('orderModal');
-            const orderForm = document.getElementById('orderForm');
-            const cancelBtn = document.getElementById('cancelBtn');
-            const modalTitle = document.getElementById('modalTitle');
-            const editCardIdInput = document.getElementById('editCardId');
+        // --- DOM Elements ---
+        const board = document.getElementById('mes-board');
+        const kpiDashboard = document.getElementById('kpi-dashboard');
+        const searchInput = document.getElementById('searchInput');
+        const filterType = document.getElementById('filterType');
+        const filterRush = document.getElementById('filterRush');
+        // Modal elements
+        const addOrderBtn = document.getElementById('addOrderBtn');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const orderModal = document.getElementById('orderModal');
+        const orderForm = document.getElementById('orderForm');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const editCardIdInput = document.getElementById('editCardId');
 
-            // --- Board Rendering ---
-            function renderBoard() {
-                board.innerHTML = ''; // Clear board
+        // --- Data Persistence with localStorage ---
+        function saveState() {
+            localStorage.setItem('mesOrders_v2', JSON.stringify(orders));
+        }
 
-                // Create columns
-                STAGES.forEach(stage => {
-                    const stageEl = document.createElement('div');
-                    stageEl.className = 'production-stage';
-                    stageEl.id = stage.id;
-                    stageEl.innerHTML = `
-                        <h2>${stage.title}</h2>
-                        <div class="cards-container" id="${stage.id}-cards"></div>
-                    `;
-                    board.appendChild(stageEl);
-                });
-
-                // Create and place cards
-                orders.forEach(order => {
-                    const card = createCardElement(order);
-                    const container = document.getElementById(`${order.stage}-cards`);
-                    if (container) {
-                        container.appendChild(card);
-                    }
-                });
-
-                // Add drag and drop listeners
-                addDragAndDropListeners();
+        function loadState() {
+            const savedOrders = localStorage.getItem('mesOrders_v2');
+            if (savedOrders) {
+                orders = JSON.parse(savedOrders);
+            } else {
+                // Load default data if nothing is saved
+                orders = [
+                    { id: 1698350001, orderNumber: 'SO-78901', customer: 'Turner Construction', type: 'KD', details: '3x Jambs, 1x Head', stage: 'stage-punching', isRush: false, dueDate: '2024-11-10' },
+                    { id: 1698350002, orderNumber: 'SO-78902', customer: 'PCL Constructors', type: 'FW', details: 'Standard frame set', stage: 'stage-shearing', isRush: true, dueDate: '2024-10-28' },
+                    { id: 1698350003, orderNumber: 'SO-78903', customer: 'Clark Builders', type: 'KD', details: 'Hinge Jamb only', stage: 'stage-forming', isRush: false, dueDate: '2023-10-01' }, // Overdue example
+                    { id: 1698350004, orderNumber: 'SO-78904', customer: 'Local Supply Co.', type: 'KD', details: '10x KD stock frames', stage: 'stage-orders', isRush: false, dueDate: '2024-11-20' },
+                ];
             }
+        }
 
-            function createCardElement(order) {
-                const card = document.createElement('div');
-                card.className = 'order-card';
-                if(order.isRush) card.classList.add('is-rush');
-                card.id = `card-${order.id}`;
-                card.draggable = true;
+        // --- KPI Dashboard & Toast Notifications ---
+        function renderDashboard() {
+            const totalOrders = orders.length;
+            const rushOrders = orders.filter(o => o.isRush).length;
+            const ordersReadyToShip = orders.filter(o => o.stage === 'stage-shipping').length;
 
-                card.innerHTML = `
-                    <h3>Order: ${order.orderNumber}</h3>
-                    <p><strong>Customer:</strong> ${order.customer}</p>
-                    <p>${order.details}</p>
-                    <span class="card-tag ${order.type === 'KD' ? 'tag-kd' : 'tag-fw'}">${order.type}</span>
-                    <div class="card-actions">
-                        <button class="edit-btn" title="Edit">✏️</button>
-                        <button class="delete-btn" title="Delete">🗑️</button>
-                    </div>
+            kpiDashboard.innerHTML = `
+                <div class="kpi-card">
+                    <p class="value">${totalOrders}</p>
+                    <p class="label">Total Orders</p>
+                </div>
+                <div class="kpi-card">
+                    <p class="value" style="color: var(--rush-color);">${rushOrders}</p>
+                    <p class="label">Rush Orders</p>
+                </div>
+                <div class="kpi-card">
+                    <p class="value" style="color: var(--success-color);">${ordersReadyToShip}</p>
+                    <p class="label">Ready to Ship</p>
+                </div>
+            `;
+        }
+        
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.backgroundColor = type === 'error' ? 'var(--rush-color)' : 'var(--allegion-blue)';
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- Board Rendering ---
+        function renderBoard() {
+            board.innerHTML = ''; // Clear board
+
+            const filters = {
+                search: searchInput.value.toLowerCase(),
+                type: filterType.value,
+                rush: filterRush.value
+            };
+
+            const filteredOrders = orders.filter(order => {
+                const matchesSearch = order.orderNumber.toLowerCase().includes(filters.search) || order.customer.toLowerCase().includes(filters.search);
+                const matchesType = filters.type === 'all' || order.type === filters.type;
+                const matchesRush = filters.rush === 'all' || (filters.rush === 'rush' && order.isRush);
+                return matchesSearch && matchesType && matchesRush;
+            });
+
+            STAGES.forEach(stage => {
+                const stageEl = document.createElement('div');
+                stageEl.className = 'production-stage';
+                stageEl.id = stage.id;
+
+                const stageOrders = filteredOrders.filter(o => o.stage === stage.id);
+
+                stageEl.innerHTML = `
+                    <h2>${stage.title} <span class="card-count">${stageOrders.length}</span></h2>
+                    <div class="cards-container" data-stage-id="${stage.id}"></div>
                 `;
-                
-                // Add event listeners for edit and delete buttons
-                card.querySelector('.edit-btn').addEventListener('click', () => openModalForEdit(order.id));
-                card.querySelector('.delete-btn').addEventListener('click', () => deleteOrder(order.id));
+                board.appendChild(stageEl);
 
-                return card;
-            }
+                const cardsContainer = stageEl.querySelector('.cards-container');
+                stageOrders.forEach(order => {
+                    const card = createCardElement(order);
+                    cardsContainer.appendChild(card);
+                });
+            });
 
-            // --- Modal Logic ---
-            function openModal(isEdit = false, orderId = null) {
-                orderForm.reset();
-                if (isEdit) {
-                    modalTitle.textContent = 'Edit Order';
-                    editCardIdInput.value = orderId;
-                    const order = orders.find(o => o.id == orderId);
-                    if (order) {
-                        document.getElementById('orderNumber').value = order.orderNumber;
-                        document.getElementById('customerName').value = order.customer;
-                        document.querySelector(`input[name="frameType"][value="${order.type}"]`).checked = true;
-                        document.getElementById('details').value = order.details;
-                        document.getElementById('isRush').checked = order.isRush;
-                    }
-                } else {
-                    modalTitle.textContent = 'Add New Order';
-                    editCardIdInput.value = '';
+            addDragAndDropListeners();
+        }
+
+        function createCardElement(order) {
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            if(order.isRush) card.classList.add('is-rush');
+            card.id = `card-${order.id}`;
+            card.draggable = true;
+
+            const today = new Date();
+            today.setHours(0,0,0,0); // Normalize today's date
+            const isOverdue = order.dueDate && new Date(order.dueDate) < today;
+
+            const dueDateHtml = order.dueDate ?
+                `<div class="due-date ${isOverdue ? 'overdue' : ''}">
+                    <i class="fa-solid fa-calendar-days"></i> ${new Date(order.dueDate).toLocaleDateString()}
+                </div>` : '';
+
+            card.innerHTML = `
+                <h3>Order: ${order.orderNumber}</h3>
+                <p><strong>Customer:</strong> ${order.customer}</p>
+                <p>${order.details}</p>
+                <div class="card-footer">
+                    <span class="card-tag ${order.type === 'KD' ? 'tag-kd' : 'tag-fw'}">${order.type}</span>
+                    ${dueDateHtml}
+                </div>
+                <div class="card-actions">
+                    <button class="edit-btn" title="Edit">✏️</button>
+                    <button class="delete-btn" title="Delete">🗑️</button>
+                </div>
+            `;
+            
+            card.querySelector('.edit-btn').addEventListener('click', () => openModalForEdit(order.id));
+            card.querySelector('.delete-btn').addEventListener('click', () => deleteOrder(order.id));
+            return card;
+        }
+
+        // --- Modal Logic ---
+        function openModal(isEdit = false, orderId = null) {
+            orderForm.reset();
+            if (isEdit) {
+                modalTitle.textContent = 'Edit Order';
+                editCardIdInput.value = orderId;
+                const order = orders.find(o => o.id == orderId);
+                if (order) {
+                    document.getElementById('orderNumber').value = order.orderNumber;
+                    document.getElementById('customerName').value = order.customer;
+                    document.getElementById('dueDate').value = order.dueDate || '';
+                    document.querySelector(`input[name="frameType"][value="${order.type}"]`).checked = true;
+                    document.getElementById('details').value = order.details;
+                    document.getElementById('isRush').checked = order.isRush;
                 }
-                modalOverlay.style.display = 'block';
-                orderModal.style.display = 'block';
+            } else {
+                modalTitle.textContent = 'Add New Order';
+                editCardIdInput.value = '';
             }
+            modalOverlay.style.display = 'block';
+            orderModal.style.display = 'block';
+        }
 
-            function closeModal() {
-                modalOverlay.style.display = 'none';
-                orderModal.style.display = 'none';
-            }
+        function closeModal() {
+            modalOverlay.style.display = 'none';
+            orderModal.style.display = 'none';
+        }
 
-            function openModalForEdit(orderId) {
-                openModal(true, orderId);
-            }
+        function openModalForEdit(orderId) { openModal(true, orderId); }
 
-            // --- CRUD Operations ---
-            function handleFormSubmit(e) {
-                e.preventDefault();
-                
-                const id = editCardIdInput.value;
-                const orderData = {
-                    orderNumber: document.getElementById('orderNumber').value,
-                    customer: document.getElementById('customerName').value,
-                    type: document.querySelector('input[name="frameType"]:checked').value,
-                    details: document.getElementById('details').value,
-                    isRush: document.getElementById('isRush').checked
-                };
+        // --- CRUD Operations ---
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const id = editCardIdInput.value;
+            const orderData = {
+                orderNumber: document.getElementById('orderNumber').value.trim(),
+                customer: document.getElementById('customerName').value.trim(),
+                type: document.querySelector('input[name="frameType"]:checked').value,
+                details: document.getElementById('details').value.trim(),
+                dueDate: document.getElementById('dueDate').value,
+                isRush: document.getElementById('isRush').checked
+            };
 
-                if (id) { // Update existing order
-                    const orderIndex = orders.findIndex(o => o.id == id);
-                    if (orderIndex > -1) {
-                        orders[orderIndex] = { ...orders[orderIndex], ...orderData };
-                    }
-                } else { // Create new order
-                    const newOrder = {
-                        id: Date.now(), // Simple unique ID
-                        stage: STAGES[0].id, // Add to the first column
-                        ...orderData
-                    };
-                    orders.push(newOrder);
+            if (id) { // Update existing order
+                const orderIndex = orders.findIndex(o => o.id == id);
+                if (orderIndex > -1) {
+                    orders[orderIndex] = { ...orders[orderIndex], ...orderData };
+                    showToast('Order updated successfully!');
                 }
-                
-                closeModal();
+            } else { // Create new order
+                const newOrder = { id: Date.now(), stage: STAGES[0].id, ...orderData };
+                orders.push(newOrder);
+                showToast('New order added!');
+            }
+            
+            closeModal();
+            saveState();
+            renderBoard();
+            renderDashboard();
+        }
+
+        function deleteOrder(orderId) {
+            if(confirm('Are you sure you want to delete this order? This cannot be undone.')) {
+                orders = orders.filter(o => o.id != orderId);
+                saveState();
                 renderBoard();
+                renderDashboard();
+                showToast('Order deleted.', 'error');
             }
+        }
 
-            function deleteOrder(orderId) {
-                if(confirm('Are you sure you want to delete this order?')) {
-                    orders = orders.filter(o => o.id != orderId);
-                    renderBoard();
-                }
-            }
+        // --- Drag and Drop Logic ---
+        function addDragAndDropListeners() {
+            const cards = document.querySelectorAll('.order-card');
+            const containers = document.querySelectorAll('.cards-container');
 
-            // --- Drag and Drop Logic ---
-            function addDragAndDropListeners() {
-                const cards = document.querySelectorAll('.order-card');
-                const containers = document.querySelectorAll('.cards-container');
+            cards.forEach(card => {
+                card.addEventListener('dragstart', () => card.classList.add('dragging'));
+                card.addEventListener('dragend', () => card.classList.remove('dragging'));
+            });
 
-                cards.forEach(card => {
-                    card.addEventListener('dragstart', () => {
-                        card.classList.add('dragging');
-                    });
-                    card.addEventListener('dragend', () => {
-                        card.classList.remove('dragging');
-                    });
+            containers.forEach(container => {
+                container.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    container.parentElement.classList.add('drag-over');
                 });
-
-                containers.forEach(container => {
-                    container.addEventListener('dragover', e => {
-                        e.preventDefault();
-                        container.parentElement.classList.add('drag-over');
-                    });
-
-                    container.addEventListener('dragleave', () => {
-                       container.parentElement.classList.remove('drag-over');
-                    });
-
-                    container.addEventListener('drop', e => {
-                        e.preventDefault();
-                        container.parentElement.classList.remove('drag-over');
-                        const draggingCard = document.querySelector('.dragging');
-                        if (draggingCard) {
-                            // Update the state
-                            const cardId = draggingCard.id.split('-')[1];
-                            const newStageId = container.parentElement.id;
-                            const orderIndex = orders.findIndex(o => o.id == cardId);
-                            if(orderIndex > -1) {
-                                orders[orderIndex].stage = newStageId;
-                                // Re-render the board from the updated state
-                                renderBoard();
-                            }
+                container.addEventListener('dragleave', () => container.parentElement.classList.remove('drag-over'));
+                container.addEventListener('drop', e => {
+                    e.preventDefault();
+                    container.parentElement.classList.remove('drag-over');
+                    const draggingCard = document.querySelector('.dragging');
+                    if (draggingCard && draggingCard.parentElement !== container) {
+                        container.appendChild(draggingCard);
+                        const cardId = draggingCard.id.split('-')[1];
+                        const newStageId = container.dataset.stageId;
+                        const orderIndex = orders.findIndex(o => o.id == cardId);
+                        
+                        if(orderIndex > -1) {
+                            orders[orderIndex].stage = newStageId;
+                            updateAllCardCounts();
+                            renderDashboard();
+                            saveState();
                         }
-                    });
+                    }
                 });
-            }
+            });
+        }
+        
+        function updateAllCardCounts() {
+            STAGES.forEach(stage => {
+                const container = board.querySelector(`[data-stage-id="${stage.id}"]`);
+                if (container) {
+                    const count = container.children.length;
+                    const countEl = board.querySelector(`#${stage.id} .card-count`);
+                    if (countEl) countEl.textContent = count;
+                }
+            });
+        }
 
-            // --- Initial Setup ---
-            addOrderBtn.addEventListener('click', () => openModal());
-            cancelBtn.addEventListener('click', closeModal);
-            modalOverlay.addEventListener('click', closeModal);
-            orderForm.addEventListener('submit', handleFormSubmit);
-
-            renderBoard(); // Initial render
-        });
+        // --- Initial Setup ---
+        addOrderBtn.addEventListener('click', () => openModal());
+        cancelBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', closeModal);
+        orderForm.addEventListener('submit', handleFormSubmit);
+        searchInput.addEventListener('input', renderBoard);
+        filterType.addEventListener('change', renderBoard);
+        filterRush.addEventListener('change', renderBoard);
+        
+        // --- First Load ---
+        loadState();
+        renderDashboard();
+        renderBoard();
+    });
     </script>
-
 </body>
 </html>
