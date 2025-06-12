@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Allegion Steelcraft - Advanced Visual MES</title>
-
+    <!-- Using a CDN for icons - no extra files needed -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         /* --- General Styles --- */
@@ -173,6 +173,13 @@
             text-align: center;
             color: #888;
             font-style: italic;
+            border: 2px dashed #ddd;
+            border-radius: var(--border-radius);
+            margin: 10px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .drag-over {
             background-color: #cce5ff !important;
@@ -333,7 +340,6 @@
         const searchInput = document.getElementById('searchInput');
         const filterType = document.getElementById('filterType');
         const filterRush = document.getElementById('filterRush');
-        // Modal elements
         const addOrderBtn = document.getElementById('addOrderBtn');
         const modalOverlay = document.getElementById('modalOverlay');
         const orderModal = document.getElementById('orderModal');
@@ -342,7 +348,6 @@
         const modalTitle = document.getElementById('modalTitle');
         const editCardIdInput = document.getElementById('editCardId');
 
-        // --- Data Persistence with localStorage ---
         function saveState() {
             localStorage.setItem('mesOrders_v2', JSON.stringify(orders));
         }
@@ -352,35 +357,23 @@
             if (savedOrders) {
                 orders = JSON.parse(savedOrders);
             } else {
-                // Load default data if nothing is saved
                 orders = [
                     { id: 1698350001, orderNumber: 'SO-78901', customer: 'Turner Construction', type: 'KD', details: '3x Jambs, 1x Head', stage: 'stage-punching', isRush: false, dueDate: '2024-11-10' },
                     { id: 1698350002, orderNumber: 'SO-78902', customer: 'PCL Constructors', type: 'FW', details: 'Standard frame set', stage: 'stage-shearing', isRush: true, dueDate: '2024-10-28' },
-                    { id: 1698350003, orderNumber: 'SO-78903', customer: 'Clark Builders', type: 'KD', details: 'Hinge Jamb only', stage: 'stage-forming', isRush: false, dueDate: '2023-10-01' }, // Overdue example
+                    { id: 1698350003, orderNumber: 'SO-78903', customer: 'Clark Builders', type: 'KD', details: 'Hinge Jamb only', stage: 'stage-forming', isRush: false, dueDate: '2023-10-01' },
                     { id: 1698350004, orderNumber: 'SO-78904', customer: 'Local Supply Co.', type: 'KD', details: '10x KD stock frames', stage: 'stage-orders', isRush: false, dueDate: '2024-11-20' },
                 ];
             }
         }
 
-        // --- KPI Dashboard & Toast Notifications ---
         function renderDashboard() {
             const totalOrders = orders.length;
             const rushOrders = orders.filter(o => o.isRush).length;
             const ordersReadyToShip = orders.filter(o => o.stage === 'stage-shipping').length;
-
             kpiDashboard.innerHTML = `
-                <div class="kpi-card">
-                    <p class="value">${totalOrders}</p>
-                    <p class="label">Total Orders</p>
-                </div>
-                <div class="kpi-card">
-                    <p class="value" style="color: var(--rush-color);">${rushOrders}</p>
-                    <p class="label">Rush Orders</p>
-                </div>
-                <div class="kpi-card">
-                    <p class="value" style="color: var(--success-color);">${ordersReadyToShip}</p>
-                    <p class="label">Ready to Ship</p>
-                </div>
+                <div class="kpi-card"><p class="value">${totalOrders}</p><p class="label">Total Orders</p></div>
+                <div class="kpi-card"><p class="value" style="color: var(--rush-color);">${rushOrders}</p><p class="label">Rush Orders</p></div>
+                <div class="kpi-card"><p class="value" style="color: var(--success-color);">${ordersReadyToShip}</p><p class="label">Ready to Ship</p></div>
             `;
         }
         
@@ -389,12 +382,10 @@
             toast.textContent = message;
             toast.style.backgroundColor = type === 'error' ? 'var(--rush-color)' : 'var(--allegion-blue)';
             toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // --- Board Rendering ---
+        // --- Board Rendering (CORRECTED) ---
         function renderBoard() {
             board.innerHTML = ''; // Clear board
 
@@ -404,36 +395,36 @@
                 rush: filterRush.value
             };
 
-            const filteredOrders = orders.filter(order => {
-                const matchesSearch = order.orderNumber.toLowerCase().includes(filters.search) || order.customer.toLowerCase().includes(filters.search);
-                const matchesType = filters.type === 'all' || order.type === filters.type;
-                const matchesRush = filters.rush === 'all' || (filters.rush === 'rush' && order.isRush);
-                return matchesSearch && matchesType && matchesRush;
-            });
+            const filteredOrders = orders.filter(order =>
+                (order.orderNumber.toLowerCase().includes(filters.search) || order.customer.toLowerCase().includes(filters.search)) &&
+                (filters.type === 'all' || order.type === filters.type) &&
+                (filters.rush === 'all' || (filters.rush === 'rush' && order.isRush))
+            );
 
             STAGES.forEach(stage => {
                 const stageEl = document.createElement('div');
                 stageEl.className = 'production-stage';
                 stageEl.id = stage.id;
-
+                
                 const stageOrders = filteredOrders.filter(o => o.stage === stage.id);
-
+                
                 stageEl.innerHTML = `
                     <h2>${stage.title} <span class="card-count">${stageOrders.length}</span></h2>
                     <div class="cards-container" data-stage-id="${stage.id}"></div>
                 `;
                 board.appendChild(stageEl);
-
+                
                 const cardsContainer = stageEl.querySelector('.cards-container');
-                stageOrders.forEach(order => {
-                    const card = createCardElement(order);
-                    cardsContainer.appendChild(card);
-                });
-
                 if (stageOrders.length === 0) {
+                    // Correctly place the placeholder for an empty stage
                     cardsContainer.innerHTML = `<div class="empty-stage-placeholder">No orders in this stage</div>`;
+                } else {
+                    stageOrders.forEach(order => {
+                        const card = createCardElement(order);
+                        cardsContainer.appendChild(card);
+                    });
                 }
-            });
+            }); // <<< The forEach loop now correctly encloses the logic for each stage
 
             addDragAndDropListeners();
         }
@@ -448,11 +439,9 @@
             const today = new Date();
             today.setHours(0,0,0,0);
             const isOverdue = order.dueDate && new Date(order.dueDate) < today;
-
-            const dueDateHtml = order.dueDate ?
-                `<div class="due-date ${isOverdue ? 'overdue' : ''}">
-                    <i class="fa-solid fa-calendar-days"></i> ${new Date(order.dueDate).toLocaleDateString()}
-                </div>` : '';
+            const dueDateHtml = order.dueDate 
+                ? `<div class="due-date ${isOverdue ? 'overdue' : ''}"><i class="fa-solid fa-calendar-days"></i> ${new Date(order.dueDate).toLocaleDateString()}</div>` 
+                : '';
 
             card.innerHTML = `
                 <h3>Order: ${order.orderNumber}</h3>
@@ -473,7 +462,6 @@
             return card;
         }
 
-        // --- Modal Logic ---
         function openModal(isEdit = false, orderId = null) {
             orderForm.reset();
             if (isEdit) {
@@ -504,10 +492,8 @@
 
         function openModalForEdit(orderId) { openModal(true, orderId); }
 
-        // --- CRUD Operations ---
         function handleFormSubmit(e) {
             e.preventDefault();
-            
             const id = editCardIdInput.value;
             const orderData = {
                 orderNumber: document.getElementById('orderNumber').value.trim(),
@@ -518,13 +504,13 @@
                 isRush: document.getElementById('isRush').checked
             };
 
-            if (id) { // Update existing order
+            if (id) {
                 const orderIndex = orders.findIndex(o => o.id == id);
                 if (orderIndex > -1) {
                     orders[orderIndex] = { ...orders[orderIndex], ...orderData };
                     showToast('Order updated successfully!');
                 }
-            } else { // Create new order
+            } else {
                 const newOrder = { id: Date.now(), stage: STAGES[0].id, ...orderData };
                 orders.push(newOrder);
                 showToast('New order added!');
@@ -546,18 +532,13 @@
             }
         }
 
-        // --- Drag and Drop Logic --- //
         function addDragAndDropListeners() {
             const cards = document.querySelectorAll('.order-card');
             const containers = document.querySelectorAll('.cards-container');
 
             cards.forEach(card => {
-                card.addEventListener('dragstart', () => {
-                    card.classList.add('dragging');
-                });
-                card.addEventListener('dragend', () => {
-                    card.classList.remove('dragging');
-                });
+                card.addEventListener('dragstart', () => card.classList.add('dragging'));
+                card.addEventListener('dragend', () => card.classList.remove('dragging'));
             });
 
             containers.forEach(container => {
@@ -565,28 +546,25 @@
                     e.preventDefault();
                     container.parentElement.classList.add('drag-over');
                 });
-
-                container.addEventListener('dragleave', () => {
-                    container.parentElement.classList.remove('drag-over');
-                });
-
+                container.addEventListener('dragleave', () => container.parentElement.classList.remove('drag-over'));
                 container.addEventListener('drop', e => {
                     e.preventDefault();
                     container.parentElement.classList.remove('drag-over');
                     const draggingCard = document.querySelector('.dragging');
-                    
                     if (draggingCard && draggingCard.parentElement !== container) {
                         const sourceContainer = draggingCard.parentElement;
+
                         const placeholder = container.querySelector('.empty-stage-placeholder');
                         if (placeholder) {
-                            container.innerHTML = ''; // Removes the "No orders..." message
+                            container.innerHTML = '';
                         }
+                        
                         container.appendChild(draggingCard);
+
                         if (sourceContainer.children.length === 0) {
                             sourceContainer.innerHTML = `<div class="empty-stage-placeholder">No orders in this stage</div>`;
                         }
-                        
-                        // Update the application state and UI counts
+
                         const cardId = draggingCard.id.split('-')[1];
                         const newStageId = container.dataset.stageId;
                         const orderIndex = orders.findIndex(o => o.id == cardId);
@@ -604,11 +582,11 @@
         
         function updateAllCardCounts() {
             STAGES.forEach(stage => {
-                const container = board.querySelector(`[data-stage-id="${stage.id}"]`);
-                if (container) {
-                    // Count only order cards, ignore the placeholder
+                const stageEl = board.querySelector(`#${stage.id}`);
+                if (stageEl) {
+                    const container = stageEl.querySelector('.cards-container');
                     const count = container.querySelectorAll('.order-card').length;
-                    const countEl = board.querySelector(`#${stage.id} .card-count`);
+                    const countEl = stageEl.querySelector('.card-count');
                     if (countEl) countEl.textContent = count;
                 }
             });
