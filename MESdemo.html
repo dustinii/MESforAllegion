@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Allegion Steelcraft - Advanced Visual MES</title>
-    <!-- Using a CDN for icons - no extra files needed -->
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         /* --- General Styles --- */
@@ -546,7 +546,7 @@
             }
         }
 
-        // --- Drag and Drop Logic --- (UPDATED & CORRECTED)
+        // --- Drag and Drop Logic --- //
         function addDragAndDropListeners() {
             const cards = document.querySelectorAll('.order-card');
             const containers = document.querySelectorAll('.cards-container');
@@ -576,27 +576,16 @@
                     const draggingCard = document.querySelector('.dragging');
                     
                     if (draggingCard && draggingCard.parentElement !== container) {
-                        // --- CORRECTED LOGIC STARTS HERE ---
-
-                        // 1. Get a reference to the card's original column
                         const sourceContainer = draggingCard.parentElement;
-
-                        // 2. Check if the destination column has a placeholder and clear it
                         const placeholder = container.querySelector('.empty-stage-placeholder');
                         if (placeholder) {
                             container.innerHTML = ''; // Removes the "No orders..." message
                         }
-                        
-                        // 3. Add the dragged card to the new column
                         container.appendChild(draggingCard);
-
-                        // 4. Check if the original column is now empty and add a placeholder if it is
                         if (sourceContainer.children.length === 0) {
                             sourceContainer.innerHTML = `<div class="empty-stage-placeholder">No orders in this stage</div>`;
                         }
-
-                        // --- CORRECTED LOGIC ENDS HERE ---
-
+                        
                         // Update the application state and UI counts
                         const cardId = draggingCard.id.split('-')[1];
                         const newStageId = container.dataset.stageId;
