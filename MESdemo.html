@@ -79,7 +79,12 @@
             transform: translateY(-2px);
         }
 
-        /* --- KPI Dashboard (no changes) --- */
+        .empty-stage-placeholder {
+    padding: 20px;
+    text-align: center;
+    color: #888;
+    font-style: italic;
+}
         .dashboard-container {
             display: flex;
             gap: 20px;
@@ -429,6 +434,9 @@
                     const card = createCardElement(order);
                     cardsContainer.appendChild(card);
                 });
+                if (stageOrders.length === 0) {
+    cardsContainer.innerHTML = `<div class="empty-stage-placeholder">No orders in this stage</div>`;
+}
             });
 
             addDragAndDropListeners();
