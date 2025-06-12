@@ -570,7 +570,13 @@
                     container.parentElement.classList.remove('drag-over');
                     const draggingCard = document.querySelector('.dragging');
                     if (draggingCard && draggingCard.parentElement !== container) {
+                        const sourceContainer = draggingCard.parentElement;
+                         const placeholder = container.querySelector('.empty-stage-placeholder');
+                        if (placeholder) {
+                            container.innerHTML = '';
                         container.appendChild(draggingCard);
+                             if (sourceContainer.children.length === 0) {
+                            sourceContainer.innerHTML = `<div class="empty-stage-placeholder">No orders in this stage</div>`;
                         const cardId = draggingCard.id.split('-')[1];
                         const newStageId = container.dataset.stageId;
                         const orderIndex = orders.findIndex(o => o.id == cardId);
