@@ -153,7 +153,18 @@
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
+            transition: background-color 0.3s, color 0.3s; 
         }
+
+        .production-stage.wip-overload > h2 {
+            background-color: var(--rush-color);
+            color: white;
+        }
+        .production-stage.wip-overload .card-count {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        /* END CHANGE */
         .card-count {
             background-color: rgba(0,0,0,0.1);
             border-radius: 12px;
@@ -320,17 +331,17 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- State and Constants ---
         const STAGES = [
-            { id: 'stage-orders', title: 'Orders Received' },
-            { id: 'stage-shearing', title: 'Shearing' },
-            { id: 'stage-punching', title: 'Punching (Vipros/Pega)' },
-            { id: 'stage-forming', title: 'Press Brake (Forming)' },
-            { id: 'stage-spotweld', title: 'Spot Welding' },
-            { id: 'stage-paint', title: 'Painting' },
-            { id: 'stage-final-assembly', title: 'Final Assembly (Weld/Pack)' },
-            { id: 'stage-shipping', title: 'Ready to Ship' },
+            { id: 'stage-orders', title: 'Orders Received', wipLimit: null },
+            { id: 'stage-shearing', title: 'Shearing', wipLimit: 5 },
+            { id: 'stage-punching', title: 'Punching (Vipros/Pega)', wipLimit: 4 },
+            { id: 'stage-forming', title: 'Press Brake (Forming)', wipLimit: 4 },
+            { id: 'stage-spotweld', title: 'Spot Welding', wipLimit: 6 },
+            { id: 'stage-paint', title: 'Painting', wipLimit: 10 },
+            { id: 'stage-final-assembly', title: 'Final Assembly (Weld/Pack)', wipLimit: 8 },
+            { id: 'stage-shipping', title: 'Ready to Ship', wipLimit: null },
         ];
+        // END CHANGE
         
         let orders = []; // The "single source of truth"
 
@@ -385,7 +396,7 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // --- Board Rendering (CORRECTED) ---
+        // --- Board Rendering ---
         function renderBoard() {
             board.innerHTML = ''; // Clear board
 
@@ -416,7 +427,6 @@
                 
                 const cardsContainer = stageEl.querySelector('.cards-container');
                 if (stageOrders.length === 0) {
-                    // Correctly place the placeholder for an empty stage
                     cardsContainer.innerHTML = `<div class="empty-stage-placeholder">No orders in this stage</div>`;
                 } else {
                     stageOrders.forEach(order => {
@@ -424,9 +434,10 @@
                         cardsContainer.appendChild(card);
                     });
                 }
-            }); // <<< The forEach loop now correctly encloses the logic for each stage
+            });
 
             addDragAndDropListeners();
+            updateAllCardCounts(); 
         }
 
         function createCardElement(order) {
@@ -587,7 +598,19 @@
                     const container = stageEl.querySelector('.cards-container');
                     const count = container.querySelectorAll('.order-card').length;
                     const countEl = stageEl.querySelector('.card-count');
-                    if (countEl) countEl.textContent = count;
+                    
+                    if (countEl) {
+                        countEl.textContent = count;
+                        // Check WIP Limit
+                        if (stage.wipLimit !== null) {
+                            if (count > stage.wipLimit) {
+                                stageEl.classList.add('wip-overload');
+                                countEl.textContent = `${count} / ${stage.wipLimit}`; // Show limit
+                            } else {
+                                stageEl.classList.remove('wip-overload');
+                            }
+                        }
+                    }
                 }
             });
         }
